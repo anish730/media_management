@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+        h1, h2 {
+            color: #343a40;
+            margin-bottom: 20px;
+        }
+        .custom-file-label {
+            color: #6c757d;
+        }
+        table {
+            width: 100%;
+            background-color: #fff;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #dee2e6;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        img, video, audio {
+            max-width: 100px;
+            height: auto;
+        }
+        .btn-upload {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-upload:hover {
+            background-color: #0056b3;
+        }
+        .toast {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1050;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Media Management</h1>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="toast align-items-center 
+                                {% if 'success' in message.tags %}bg-success text-white{% elif 'error' in message.tags %}bg-danger text-white{% endif %} 
+                                border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                {{ message }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="card shadow-sm p-4 mb-4">
+            <h2 class="text-center">Upload Files</h2>
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_file" class="form-label">Select Files</label>
+                    <input type="file" name="file" id="id_file" class="form-control" multiple required>
+                    <div class="invalid-feedback">Please select at least one file.</div>
+                </div>
+                <button type="submit" class="btn btn-upload w-100">Upload</button>
+            </form>
+        </div>
+
+        <!-- Uploaded Files Table -->
+        <div class="table-responsive">
+            <h2 class="text-center">Uploaded Files</h2>
+            <table class="table table-hover table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Preview</th>
+                        <th>File Name</th>
+                        <th>Category</th>
+                        <th>Size (KB)</th>
+                        <th>Type</th>
+                        <th>Uploaded Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td>
+                            {% if file.category == 'Image' %}
+                                <img src="{{ file.file.url }}" alt="{{ file.file_name }}">
+                            {% elif file.category == 'Video' %}
+                                <video controls>
+                                    <source src="{{ file.file.url }}">
+                                </video>
+                            {% elif file.category == 'Audio' %}
+                                <audio controls>
+                                    <source src="{{ file.file.url }}">
+                                </audio>
+                            {% endif %}
+                        </td>
+                        <td>{{ file.file_name }}</td>
+                        <td>{{ file.category }}</td>
+                        <td>{{ file.size|floatformat:2 }}</td>
+                        <td>{{ file.file_type }}</td>
+                        <td>{{ file.date_uploaded|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a href="{% url 'download_file' file.id %}" class="btn btn-sm btn-primary">Download</a>
+                            <a href="{% url 'delete_file' file.id %}" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No files uploaded yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toastElements = document.querySelectorAll('.toast');
+            toastElements.forEach(toast => {
+                const bootstrapToast = new bootstrap.Toast(toast, { delay: 3000 });
+                bootstrapToast.show();
+            });
+
+            // Enable Bootstrap validation
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
